@@ -12,7 +12,7 @@ import json
 from pkg_resources import get_distribution
 
 from pydap.handlers.lib import BaseHandler, IterData
-from pydap.model import *
+from pydap.model import DatasetType, SequenceType, BaseType
 from pydap.exceptions import OpenFileError
 from pydap.parsers.das import add_attributes
 
@@ -30,8 +30,8 @@ class CSVHandler(BaseHandler):
         try:
             with open(filepath, 'Ur') as fp:
                 reader = csv.reader(fp, quoting=csv.QUOTE_NONNUMERIC)
-                vars = reader.next()
-        except Exception, exc:
+                vars = next(reader)
+        except Exception as exc:
             message = 'Unable to open file {filepath}: {exc}'.format(
                 filepath=filepath, exc=exc)
             raise OpenFileError(message)
@@ -75,12 +75,16 @@ class CSVData(IterData):
         ... (13, 12.1, 'Kodiak_Trail')]
 
         >>> import csv
-        >>> f = open('test.csv', 'w')
-        >>> writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
-        >>> writer.writerow(['index', 'temperature', 'site'])
-        >>> for row in data:
-        ...     writer.writerow(row)
-        >>> f.close()
+        >>> with open('test.csv', 'w') as f:
+        ...     writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+        ...     writer.writerow(['index', 'temperature', 'site'])
+        ...     for row in data:
+        ...         writer.writerow(row)
+        30
+        22
+        26
+        23
+        24
 
     Iteraring over the sequence returns data:
 
@@ -88,11 +92,11 @@ class CSVData(IterData):
         >>> seq['index'] = BaseType('index')
         >>> seq['temperature'] = BaseType('temperature')
         >>> seq['site'] = BaseType('site')
-        >>> seq.data = CSVData('test.csv', 
+        >>> seq.data = CSVData('test.csv',
         ...     (seq.name, ('index', 'temperature', 'site')))
 
         >>> for line in seq:
-        ...     print line
+        ...     print(line)
         [10.0, 15.2, 'Diamond_St']
         [11.0, 13.1, 'Blacktail_Loop']
         [12.0, 13.3, 'Platinum_St']
@@ -101,7 +105,7 @@ class CSVData(IterData):
     The order of the variables can be changed:
 
         >>> for line in seq['temperature', 'site', 'index']:
-        ...     print line
+        ...     print(line)
         [15.2, 'Diamond_St', 10.0]
         [13.1, 'Blacktail_Loop', 11.0]
         [13.3, 'Platinum_St', 12.0]
@@ -110,7 +114,7 @@ class CSVData(IterData):
     We can iterate over children:
 
         >>> for line in seq['temperature']:
-        ...     print line
+        ...     print(line)
         15.2
         13.1
         13.3
@@ -119,19 +123,19 @@ class CSVData(IterData):
     We can filter the data:
 
         >>> for line in seq[ seq.index > 10 ]:
-        ...     print line
+        ...     print(line)
         [11.0, 13.1, 'Blacktail_Loop']
         [12.0, 13.3, 'Platinum_St']
         [13.0, 12.1, 'Kodiak_Trail']
 
         >>> for line in seq[ seq.index > 10 ]['site']:
-        ...     print line
+        ...     print(line)
         Blacktail_Loop
         Platinum_St
         Kodiak_Trail
 
         >>> for line in seq['site', 'temperature'][ seq.index > 10 ]:
-        ...     print line
+        ...     print(line)
         ['Blacktail_Loop', 13.1]
         ['Platinum_St', 13.3]
         ['Kodiak_Trail', 12.1]
@@ -139,17 +143,17 @@ class CSVData(IterData):
     Or slice it:
 
         >>> for line in seq[::2]:
-        ...     print line
+        ...     print(line)
         [10.0, 15.2, 'Diamond_St']
         [12.0, 13.3, 'Platinum_St']
 
         >>> for line in seq[ seq.index > 10 ][::2]['site']:
-        ...     print line
+        ...     print(line)
         Blacktail_Loop
         Kodiak_Trail
 
         >>> for line in seq[ seq.index > 10 ]['site'][::2]:
-        ...     print line
+        ...     print(line)
         Blacktail_Loop
         Kodiak_Trail
 
@@ -169,17 +173,15 @@ class CSVData(IterData):
     def stream(self):
         """Generator that yield lines of the file."""
         try:
-            fp = open(self.filepath, 'Ur')
-        except Exception, exc:
+            with open(self.filepath, 'Ur') as fp:
+                reader = csv.reader(fp, quoting=csv.QUOTE_NONNUMERIC)
+                next(reader)  # consume var names
+                for row in reader:
+                    yield row
+        except Exception as exc:
             message = 'Unable to open file {filepath}: {exc}'.format(
                 filepath=self.filepath, exc=exc)
             raise OpenFileError(message)
-
-        reader = csv.reader(fp, quoting=csv.QUOTE_NONNUMERIC)
-        reader.next()  # consume var names
-        for row in reader:
-            yield row
-        fp.close()
 
     def __copy__(self):
         """Return a lightweight copy."""
@@ -194,10 +196,9 @@ def _test():
 
 
 if __name__ == "__main__":
+    _test()
     import sys
     from werkzeug.serving import run_simple
-
-    #_test()
 
     application = CSVHandler(sys.argv[1])
     from pydap.wsgi.ssf import ServerSideFunctions

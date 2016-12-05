@@ -1,6 +1,4 @@
 from setuptools import setup, find_packages
-import sys, os
-
 
 version = '0.2'
 
@@ -13,9 +11,9 @@ install_requires = [
 
 
 setup(name='pydap.handlers.csv',
-    version=version,
-    description="A handler that allows Pydap to server CSV files.",
-    long_description="""
+      version=version,
+      description="A handler that allows Pydap to server CSV files.",
+      long_description="""
 This handler allows Pydap to serve data from a file with comma separated
 values. Here's a simple example:
 
@@ -42,22 +40,22 @@ by creating a JSON file with the same name (`simple.csv.json` in this case):
     }
 
 """,
-    classifiers=[
-      # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    ],
-    keywords='csv opendap pydap dap data access',
-    author='Roberto De Almeida',
-    author_email='roberto@dealmeida.net',
-    url='https://github.com/robertodealmeida/pydap.handlers.csv',
-    license='MIT',
-    packages=find_packages('src'),
-    package_dir = {'': 'src'},
-    namespace_packages = ['pydap', 'pydap.handlers'],
-    include_package_data=True,
-    zip_safe=False,
-    install_requires=install_requires,
-    entry_points="""
-        [pydap.handler]    
-        csv = pydap.handlers.csv:CSVHandler
-    """,
-)
+      classifiers=[
+                   # Get strings from
+                   # http://pypi.python.org/pypi?%3Aaction=list_classifiers
+                  ],
+      keywords='csv opendap pydap dap data access',
+      author='Roberto De Almeida',
+      author_email='roberto@dealmeida.net',
+      url='https://github.com/robertodealmeida/pydap.handlers.csv',
+      license='MIT',
+      packages=find_packages('src'),
+      package_dir={'': 'src'},
+      namespace_packages=['pydap', 'pydap.handlers'],
+      include_package_data=True,
+      zip_safe=False,
+      install_requires=install_requires,
+      entry_points="""
+          [pydap.handler]
+          csv = pydap.handlers.csv:CSVHandler
+      """)
